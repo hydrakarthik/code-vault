@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ get_csrf_token() }}">
+  <title>{% block title %}CloudVault{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <nav class="navbar" aria-label="Main">
+    <a class="brand" href="{{ url_for('main.index') if authenticated else url_for('auth.login') }}">CloudVault</a>
+    {% if authenticated %}
+    <div class="nav-right">
+      {% if user_email %}<span class="user-chip" title="{{ user_email }}">{{ user_email }}</span>{% endif %}
+      <form class="nav-actions" method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+        <button type="submit" class="btn-link">Log out</button>
+      </form>
+    </div>
+    {% endif %}
+  </nav>
+  <main class="container">
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Create account - CloudVault{% endblock %}
+{% block content %}
+<div class="login-page">
+  <div class="login-card">
+    <h1>Create account</h1>
+    {% if message %}
+    <div class="status info" role="status">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="status error" role="alert">{{ error }}</div>
+    {% endif %}
+    {% if registered %}
+    <p class="auth-alt"><a href="{{ url_for('auth.login') }}">Back to sign in</a></p>
+    {% else %}
+    <form method="post" action="{{ url_for('auth.register') }}">
+      <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ email or '' }}" autocomplete="email" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" minlength="8" maxlength="128" autocomplete="new-password" required aria-describedby="pw-hint">
+        <small id="pw-hint" class="muted">At least 8 characters.</small>
+      </div>
+      <button type="submit" class="btn btn-primary">Create account</button>
+    </form>
+    <p class="auth-alt"><a href="{{ url_for('auth.login') }}">Already have an account? Sign in</a></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

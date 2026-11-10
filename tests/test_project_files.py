@@ -29,16 +29,23 @@ def test_env_example_has_only_required_variables():
     assert keys == {"SECRET_KEY", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_BUCKET"}
 
 
-def test_vercel_json_rewrites_all_paths_to_api_index():
-    data = json.loads(read("vercel.json"))
-    rewrites = data["rewrites"]
-    assert {"source": "/(.*)", "destination": "/api/index"} in rewrites
+def test_no_catch_all_rewrite_to_flask():
+    # Vercel routes Flask by the rewritten path, so a catch-all rewrite breaks every route.
+    path = ROOT / "vercel.json"
+    if path.exists():
+        assert not json.loads(path.read_text(encoding="utf-8")).get("rewrites")
 
 
-def test_api_index_exposes_flask_app():
+def test_static_assets_served_from_public():
+    assert (ROOT / "public" / "static" / "css" / "styles.css").is_file()
+    assert (ROOT / "public" / "static" / "js" / "app.js").is_file()
+    assert not (ROOT / "app" / "static").exists()
+
+
+def test_index_entrypoint_exposes_flask_app():
     from flask import Flask
 
-    module = importlib.import_module("api.index")
+    module = importlib.import_module("index")
     assert isinstance(module.app, Flask)
 
 
@@ -82,8 +89,8 @@ def test_old_storage_package_removed():
 
 
 def test_no_service_role_key_references_in_code():
-    files = list((ROOT / "app").rglob("*.py")) + list((ROOT / "api").rglob("*.py"))
-    files += list((ROOT / "app" / "static" / "js").glob("*.js"))
+    files = list((ROOT / "app").rglob("*.py")) + [ROOT / "index.py"]
+    files += list((ROOT / "public" / "static" / "js").glob("*.js"))
     assert files
     for f in files:
         text = f.read_text(encoding="utf-8")

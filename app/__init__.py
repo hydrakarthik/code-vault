@@ -1,4 +1,6 @@
 """Application factory: wiring, error handlers, security headers."""
+from pathlib import Path
+
 from flask import Flask, jsonify, render_template, request, session
 from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
@@ -12,6 +14,8 @@ from .validation import UploadRejected
 MAX_CONTENT_LENGTH = 16 * 1024  # no file content passes through Flask
 GENERIC_500 = "Something went wrong. Please try again."
 STORAGE_MSG = "Storage error. Please try again."
+# public/** is served by the Vercel CDN in production and by Flask locally.
+STATIC_DIR = Path(__file__).resolve().parent.parent / "public" / "static"
 
 
 def _is_api() -> bool:
@@ -28,7 +32,7 @@ def _error(message: str, status: int):
 def create_app(config=None, supabase_client=None):
     """Build the Flask app. Tests may inject config and a SupabaseClient."""
     config = config or Config.from_env()
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=str(STATIC_DIR), static_url_path="/static")
     app.config.update(
         SECRET_KEY=config.secret_key,
         SESSION_COOKIE_HTTPONLY=True,

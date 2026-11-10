@@ -303,7 +303,7 @@ def test_api_returns_names_as_json_data(signed_in, fake):
 
 
 def test_app_js_uses_text_content_not_inner_html():
-    js = (ROOT / "app" / "static" / "js" / "app.js").read_text(encoding="utf-8")
+    js = (ROOT / "public" / "static" / "js" / "app.js").read_text(encoding="utf-8")
     assert "innerHTML" not in js
     assert "outerHTML" not in js
     assert "insertAdjacentHTML" not in js

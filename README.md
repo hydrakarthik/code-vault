@@ -107,4 +107,4 @@ If `origin` already exists, skip the first command. GitHub Actions (`.github/wor
 3. Deploy. Pushes to `main` deploy to production and pull requests get preview deployments.
 4. Add the resulting `https://<project>.vercel.app/**` URL to the Supabase redirect URLs.
 
-`vercel.json` rewrites all paths to `api/index.py`, which exposes the Flask `app`. Vercel limits request bodies to about 4.5 MB, so files are uploaded directly from the browser to Supabase using a short-lived signed URL.
+Vercel detects the Flask `app` in `index.py` with zero configuration. Do not add a catch-all rewrite in `vercel.json`: Vercel routes Flask by the rewritten path, which would send every request to the wrong route. Static files live in `public/static/`, served by the Vercel CDN in production and by Flask locally. Vercel limits request bodies to about 4.5 MB, so files are uploaded directly from the browser to Supabase using a short-lived signed URL.

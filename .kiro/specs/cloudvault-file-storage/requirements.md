@@ -263,3 +263,27 @@ The stack is Supabase, GitHub, and Vercel only. Supabase Auth authenticates user
 2. THE CloudVault SHALL provide a `requirements.txt` file in which every dependency is pinned to an exact version.
 3. THE CloudVault SHALL include automated tests covering registration, login, unconfirmed-user rejection, token refresh, per-user isolation, upload validation including the upload-URL endpoint, view and download behavior, and delete behavior.
 4. THE automated tests SHALL run without network access by using a Fake_Supabase in place of the Supabase HTTP session.
+
+### Requirement 20: File Metadata in Supabase PostgreSQL
+
+**User Story:** As a user, I want my file metadata stored in Supabase PostgreSQL with Row Level Security, so that my file list is queryable, durable, and visible only to me.
+
+#### Acceptance Criteria
+
+1. THE `public.files` table SHALL store one row per user file with columns id (uuid primary key), user_id (uuid referencing auth.users, on delete cascade, default auth.uid()), name (text), size (bigint), content_type (text), object_key (text), created_at (timestamptz default now()), and updated_at (timestamptz), and SHALL enforce a unique constraint on (user_id, name).
+2. THE `public.files` table SHALL have RLS enabled, with policies allowing select, insert, update, and delete for the authenticated role only where user_id equals auth.uid(), and SHALL grant the anon role no access.
+3. WHEN the browser's direct upload to Supabase Storage succeeds, THE Dashboard SHALL send POST /api/files/complete with the file name and the CSRF_Token.
+4. WHEN CloudVault receives POST /api/files/complete for a valid name, THE CloudVault SHALL verify that the object exists under the User's Storage prefix, read its size and content type from Supabase Storage, and upsert the row through PostgREST (/rest/v1/files) using the User access token.
+5. IF the object does not exist under the User's Storage prefix, THEN THE CloudVault SHALL return HTTP status 404 and write no row.
+6. THE CloudVault SHALL validate the name in POST /api/files/complete using the same rules as Requirement 9.
+7. WHEN a User requests GET /api/files, THE CloudVault SHALL return the rows of the files table as name, size, and uploaded_at (created_at, or updated_at when the file was replaced), ordered newest first.
+8. IF the database request fails during listing, THEN THE CloudVault SHALL return HTTP status 502.
+9. WHEN a User deletes a file, THE CloudVault SHALL remove the Storage object and the files row.
+10. IF neither the row nor the Storage object exists, THEN THE CloudVault SHALL return HTTP status 404.
+11. IF the Storage object is missing but the row exists, THEN THE CloudVault SHALL delete the row and return HTTP status 200.
+12. THE CloudVault SHALL continue to use Supabase Storage existence checks for view and download requests.
+13. THE project SHALL ship `supabase/schema.sql` containing the table, index, RLS enablement, policies, updated_at trigger, and grants, and `supabase/storage.sql` containing an insert into storage.buckets creating a private bucket with file_size_limit 10485760 and on conflict do nothing, plus the four storage.objects RLS policies.
+14. THE SQL files SHALL be idempotent, using `drop policy if exists` and `create table if not exists`.
+15. THE README SHALL reference `supabase/schema.sql` and `supabase/storage.sql` for the database setup, in place of or in addition to inline SQL.
+16. THE CloudVault SHALL use no database password and no Service_Role_Key and SHALL introduce no new environment variables.
+17. THE automated tests SHALL extend Fake_Supabase with a /rest/v1/files endpoint emulating PostgREST and RLS.

@@ -153,6 +153,21 @@ class SupabaseStorage:
         return records
 
     def exists(self, ctx: UserContext, name: str) -> bool:
+        return self._find(ctx, name) is not None
+
+    def stat(self, ctx: UserContext, name: str) -> dict:
+        item = self._find(ctx, name)
+        if item is None:
+            raise FileNotFound("File not found.")
+        meta = item.get("metadata")
+        meta = meta if isinstance(meta, dict) else {}
+        size = meta.get("size")
+        if not isinstance(size, int) or isinstance(size, bool):
+            size = 0
+        ctype = meta.get("mimetype")
+        return {"size": size, "content_type": ctype if isinstance(ctype, str) else None}
+
+    def _find(self, ctx: UserContext, name: str):
         self._check_name(name)
         resp = self._send(
             "POST",
@@ -165,10 +180,10 @@ class SupabaseStorage:
         data = _json(resp)
         if not isinstance(data, list):
             raise StorageError("Storage request failed")
-        return any(
-            isinstance(i, dict) and i.get("name") == name and i.get("id") is not None
-            for i in data
-        )
+        for i in data:
+            if isinstance(i, dict) and i.get("name") == name and i.get("id") is not None:
+                return i
+        return None
 
     def delete(self, ctx: UserContext, name: str) -> None:
         if not self.exists(ctx, name):

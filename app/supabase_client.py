@@ -18,10 +18,12 @@ class SupabaseClient:
         self.timeout = timeout
 
     def request(self, method, path, *, token=None, json=None, params=None, headers=None):
-        h = {
-            "apikey": self.anon_key,
-            "Authorization": f"Bearer {token or self.anon_key}",
-        }
+        # The apikey header always carries the configured key (legacy anon JWT or
+        # sb_publishable_...). Publishable keys are not JWTs, so Authorization is
+        # sent only when a user access token is supplied.
+        h = {"apikey": self.anon_key}
+        if token:
+            h["Authorization"] = f"Bearer {token}"
         h.update(headers or {})
         try:
             return self.http.request(

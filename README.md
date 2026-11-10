@@ -7,31 +7,38 @@ This project creates no Supabase resources and runs no deployment commands. You 
 ## Supabase setup
 
 1. Create a Supabase project.
-2. Authentication > Providers: enable Email (email and password sign-in) and require email confirmation.
+2. Authentication > Sign In / Providers: enable Email (email and password sign-in) and turn on Confirm email.
 3. Authentication > URL Configuration:
    - Site URL: `http://127.0.0.1:5000` for local use (switch to your Vercel URL in production).
    - Redirect URLs: add `http://127.0.0.1:5000/**` and `https://<project>.vercel.app/**`.
-4. Storage: create a **private** bucket. Set its file size limit equal to `MAX_UPLOAD_SIZE` (default 10485760 bytes, 10 MiB). Files go straight from the browser to Supabase, so this limit is the independent size enforcement.
-5. SQL Editor: run the policies below, replacing `<bucket>` with your bucket name. They limit each user to objects under their own `<user_id>/` folder.
+4. SQL Editor: run these two files, in order. Both are idempotent, so re-running them is safe.
+   - [`supabase/schema.sql`](supabase/schema.sql) creates the `public.files` metadata table with an index, an `updated_at` trigger, Row Level Security, and grants (no access for `anon`).
+   - [`supabase/storage.sql`](supabase/storage.sql) creates the private `cloudvault` bucket with a 10485760 byte (10 MiB) file size limit and four `storage.objects` policies that limit each user to objects under their own `<user_id>/` folder.
+5. If you want a different bucket name or size limit, edit `storage.sql` before running it. The bucket name must match `SUPABASE_BUCKET`, and the limit should equal `MAX_UPLOAD_SIZE`. Files go straight from the browser to Supabase, so this limit is the independent size enforcement.
+6. Copy your credentials (see the table below).
+
+Excerpt from `storage.sql`:
 
 ```sql
 create policy "users select own files" on storage.objects
   for select to authenticated
-  using (bucket_id = '<bucket>' and (storage.foldername(name))[1] = auth.uid()::text);
-
-create policy "users insert own files" on storage.objects
-  for insert to authenticated
-  with check (bucket_id = '<bucket>' and (storage.foldername(name))[1] = auth.uid()::text);
-
-create policy "users update own files" on storage.objects
-  for update to authenticated
-  using (bucket_id = '<bucket>' and (storage.foldername(name))[1] = auth.uid()::text)
-  with check (bucket_id = '<bucket>' and (storage.foldername(name))[1] = auth.uid()::text);
-
-create policy "users delete own files" on storage.objects
-  for delete to authenticated
-  using (bucket_id = '<bucket>' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'cloudvault' and (storage.foldername(name))[1] = (select auth.uid())::text);
 ```
+
+### Credentials
+
+| Setting | Where to find it |
+|---|---|
+| `SUPABASE_URL` | Project Settings > API (or Data API) > Project URL |
+| `SUPABASE_ANON_KEY` | Project Settings > API Keys > `anon` `public` (legacy) key, or the publishable key |
+| `SUPABASE_BUCKET` | `cloudvault` (the bucket created by `storage.sql`) |
+| `SECRET_KEY` | Generate it locally (command below) |
+
+No database password or connection string is needed. The app talks to the Data API (PostgREST) and Storage with each user's own access token, so Row Level Security applies to every call.
+
+### How it works
+
+File content lives in the private Storage bucket under `<user_id>/<filename>`. The browser uploads straight to Supabase with a signed URL, then CloudVault records the file in the `files` table (name, size, content type, object key, timestamps). The file list is read from that table, and each user can only see their own rows.
 
 ## Environment variables
 

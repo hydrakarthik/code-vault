@@ -4,6 +4,7 @@ from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from .config import Config
 from .supabase_auth import SupabaseAuth
+from .supabase_db import FilesRepo
 from .supabase_client import SupabaseClient, SupabaseError
 from .supabase_storage import FileNotFound, InvalidFileName, StorageError, SupabaseStorage
 from .validation import UploadRejected
@@ -39,6 +40,7 @@ def create_app(config=None, supabase_client=None):
     app.extensions["cloudvault_config"] = config
     app.extensions["cloudvault_client"] = client
     app.extensions["cloudvault_auth"] = SupabaseAuth(client)
+    app.extensions["cloudvault_db"] = FilesRepo(client)
     app.extensions["cloudvault_storage"] = SupabaseStorage(
         client, config.supabase_bucket, config.supabase_url
     )

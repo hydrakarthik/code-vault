@@ -211,7 +211,7 @@ def test_expiring_token_is_refreshed_and_stored(fake, app):
     assert new["refresh_token"] != old["refresh_token"]
     assert new["expires_at"] > old["expires_at"]
     # The storage call used the refreshed token.
-    assert fake.calls_to("/object/list/")[0].token == new["access_token"]
+    assert fake.calls_to("/rest/v1/files")[0].token == new["access_token"]
     # Valid token afterwards: no second refresh.
     c.get("/api/files")
     assert len(fake.calls_to("/auth/v1/token")) == 1

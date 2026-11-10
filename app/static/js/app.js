@@ -133,9 +133,37 @@
     });
   }
 
+  // Tell CloudVault the PUT finished so it records the file metadata.
+  async function completeUpload(name) {
+    var res;
+    try {
+      res = await fetch('/api/files/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': csrf
+        },
+        body: JSON.stringify({ name: name })
+      });
+    } catch (e) {
+      throw new Error('Network error. Check your connection and try again.');
+    }
+    if (res.status === 401) {
+      window.location.href = '/login';
+      throw new Error('Authentication required.');
+    }
+    var body = safeJson(await res.text());
+    if (!res.ok) {
+      throw new Error((body && body.error) || 'Could not finalize the upload.');
+    }
+    return body;
+  }
+
   async function uploadFile(file) {
     var info = await requestUploadUrl(file);
     await putSigned(info.url, file);
+    await completeUpload(info.name || file.name);
     return info;
   }
 

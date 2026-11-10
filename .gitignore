@@ -8,3 +8,10 @@ __pycache__/
 .pytest_cache/
 .hypothesis/
 .vercel/
+node_modules/
+# Local MCP config (may contain access tokens)
+.kiro/settings/mcp.json
+
+# Not used by the Flask app; would make Vercel treat this as a Node project
+package.json
+package-lock.json

@@ -53,19 +53,19 @@ def test_list_only_own_files(signed_in, fake):
 
 
 def test_list_storage_failure_502(signed_in, fake):
-    fake.fail("/object/list/", "5xx")
+    fake.fail("/rest/v1/files", "5xx")
     resp = signed_in.get("/api/files")
     assert resp.status_code == 502
     assert "error" in resp.get_json()
 
 
 def test_list_timeout_502(signed_in, fake):
-    fake.fail("/object/list/", "timeout", times=5)
+    fake.fail("/rest/v1/files", "timeout", times=5)
     assert signed_in.get("/api/files").status_code == 502
 
 
 def test_list_malformed_502(signed_in, fake):
-    fake.fail("/object/list/", "malformed")
+    fake.fail("/rest/v1/files", "malformed")
     assert signed_in.get("/api/files").status_code == 502
 
 
@@ -82,6 +82,13 @@ def test_upload_url_success_and_upsert_header(signed_in, fake):
     assert calls[0].headers.get("x-upsert") == "true"
     # browser PUT completes the upload and the file is then listed
     assert fake.simulate_browser_put(data["url"], b"hello") == 200
+    done = signed_in.post(
+        "/api/files/complete",
+        data=json.dumps({"name": "report.pdf"}),
+        content_type="application/json",
+        headers=_hdr(signed_in),
+    )
+    assert done.status_code == 200
     names = [f["name"] for f in signed_in.get("/api/files").get_json()["files"]]
     assert names == ["report.pdf"]
 
@@ -252,7 +259,7 @@ def test_delete_storage_failure_502(signed_in, fake):
 # -- no secret leakage --------------------------------------------------
 def test_error_responses_do_not_leak_secrets(signed_in, fake):
     fake.put_object(_uid(fake), "a.txt", b"x")
-    fake.fail("/object/list/", "5xx")
+    fake.fail("/rest/v1/files", "5xx")
     fake.fail("/object/sign/", "5xx")
     with signed_in.session_transaction() as s:
         secrets_ = [s["access_token"], s["refresh_token"], "test-anon-key", "test-secret-key"]

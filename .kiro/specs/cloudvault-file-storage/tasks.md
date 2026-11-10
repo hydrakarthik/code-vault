@@ -93,6 +93,25 @@ Rewrite the existing admin/local/S3 Flask app into a multi-user app backed by Su
   - Ask the user to put their own Supabase credentials (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_BUCKET, SECRET_KEY) in `.env` before starting a local preview with `python run.py`. Do not start the preview without credentials.
   - Do not create Supabase resources, push to GitHub, or deploy to Vercel.
 
+- [x] 9. PostgreSQL file metadata
+  - [x] 9.1 Add SQL files and update README
+    - Create `supabase/schema.sql` (files table, index, RLS, policies, updated_at trigger, grants) and `supabase/storage.sql` (private bucket with file_size_limit 10485760, on conflict do nothing, four storage.objects policies); both idempotent
+    - Update `README.md` to reference both files, the steps to run them in the Supabase SQL Editor, the credentials needed (Project Settings > API > Project URL and anon public key) and the Storage bucket name
+    - _Requirements: 20.1, 20.2, 20.13, 20.14, 20.15, 20.16_
+
+  - [x] 9.2 Implement DB repo, stat helper, routes, wiring, and frontend call
+    - Create `app/supabase_db.py` (`FilesRepo`), add `SupabaseStorage.stat`, add `/api/files/complete`, list from DB, delete row with 404/200 rules, wire in `create_app`
+    - Update `app.js` to call complete after the PUT succeeds, preserving the existing UI
+    - _Requirements: 20.3, 20.4, 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.11, 20.12, 20.16_
+
+  - [x] 9.3 Extend fakes and tests
+    - Extend `tests/fakes.py` with `/rest/v1/files` PostgREST and RLS emulation; update existing tests that depend on list behavior (put_object helper also inserts a row, or add a helper)
+    - Add `tests/test_db.py` covering complete, list, delete cases, 502 on DB failure, and Properties 15 and 16
+    - _Requirements: 20.5, 20.7, 20.8, 20.10, 20.11, 20.17_
+
+- [x] 10. Checkpoint - Ensure all tests pass
+  - Run full `pytest`, ensure all tests pass, ask the user if questions arise.
+
 ## Notes
 
 - Sub-tasks marked with `*` are optional and can be skipped for a faster MVP
@@ -109,7 +128,9 @@ Rewrite the existing admin/local/S3 Flask app into a multi-user app backed by Su
     { "id": 2, "tasks": ["4.1", "5.1", "6.1"] },
     { "id": 3, "tasks": ["7.1"] },
     { "id": 4, "tasks": ["7.2", "7.3", "7.4", "7.5"] },
-    { "id": 5, "tasks": ["7.6", "7.7"] }
+    { "id": 5, "tasks": ["7.6", "7.7"] },
+    { "id": 6, "tasks": ["9.1", "9.2"] },
+    { "id": 7, "tasks": ["9.3"] }
   ]
 }
 ```

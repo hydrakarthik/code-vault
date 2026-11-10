@@ -5,10 +5,11 @@ Simulates /auth/v1 (signup, password/refresh grants, logout) and /storage/v1
 and failure injection. No network access.
 """
 import itertools
+import mimetypes
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
@@ -55,6 +56,7 @@ class FakeSupabase:
         self.access_tokens: dict[str, tuple[str, int]] = {}  # token -> (user_id, exp)
         self.refresh_tokens: dict[str, str] = {}  # token -> user_id
         self.upload_tokens: dict[str, str] = {}  # token -> key
+        self.rows: dict[tuple[str, str], dict] = {}  # (user_id, name) -> public.files row
         self.calls: list[Call] = []
         self._failures: list[dict] = []
         self._counter = itertools.count(1)
@@ -71,13 +73,34 @@ class FakeSupabase:
     def user_id(self, email) -> str:
         return self.users[email.strip().lower()].id
 
-    def put_object(self, user_id, name, data=b"", created_at=None):
+    def put_object(self, user_id, name, data=b"", created_at=None, row=True):
+        """Insert a storage object and (by default) a matching public.files row."""
         if isinstance(data, str):
             data = data.encode()
-        self.objects[f"{user_id}/{name}"] = {
-            "data": data,
-            "created_at": created_at or datetime.now(timezone.utc),
+        created_at = created_at or datetime.now(timezone.utc)
+        self.objects[f"{user_id}/{name}"] = {"data": data, "created_at": created_at}
+        if row:
+            self.put_row(user_id, name, len(data), created_at=created_at)
+
+    def put_row(self, user_id, name, size=0, created_at=None, content_type=None):
+        """Insert a public.files row only (no storage object)."""
+        created_at = created_at or datetime.now(timezone.utc)
+        self.rows[(user_id, name)] = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "name": name,
+            "size": size,
+            "content_type": content_type or mimetypes.guess_type(name)[0],
+            "object_key": f"{user_id}/{name}",
+            "created_at": created_at,
+            "updated_at": created_at,
         }
+
+    def has_row(self, user_id, name) -> bool:
+        return (user_id, name) in self.rows
+
+    def rows_for(self, user_id) -> list:
+        return [r for (u, _), r in self.rows.items() if u == user_id]
 
     def has_object(self, user_id, name) -> bool:
         return f"{user_id}/{name}" in self.objects
@@ -136,6 +159,8 @@ class FakeSupabase:
             return self._auth(method, path[len("/auth/v1"):], json, params, token)
         if path.startswith("/storage/v1/"):
             return self._storage(method, path[len("/storage/v1"):], json, token)
+        if path == "/rest/v1/files":
+            return self._rest_files(method, json, params, token)
         return FakeResponse(404, {"message": "not found"})
 
     # -- auth ------------------------------------------------------------
@@ -229,7 +254,10 @@ class FakeSupabase:
                         "id": str(uuid.uuid5(uuid.NAMESPACE_URL, key)),
                         "created_at": obj["created_at"].isoformat(),
                         "updated_at": obj["created_at"].isoformat(),
-                        "metadata": {"size": len(obj["data"])},
+                        "metadata": {
+                            "size": len(obj["data"]),
+                            "mimetype": mimetypes.guess_type(name)[0] or "application/octet-stream",
+                        },
                     })
                 items.sort(key=lambda i: i["created_at"], reverse=True)
             offset = int(body.get("offset") or 0)
@@ -268,3 +296,65 @@ class FakeSupabase:
             return FakeResponse(200, {"message": "Successfully deleted"})
 
         return FakeResponse(404, {"message": "not found"})
+
+    # -- PostgREST: public.files with RLS (user_id = auth.uid()) -----------
+    @staticmethod
+    def _row_json(row):
+        out = dict(row)
+        out["created_at"] = row["created_at"].isoformat()
+        out["updated_at"] = row["updated_at"].isoformat()
+        return out
+
+    def _visible(self, uid, params):
+        rows = [r for r in self.rows.values() if r["user_id"] == uid]  # RLS
+        for col in ("user_id", "name"):
+            val = params.get(col)
+            if val is not None:
+                if not val.startswith("eq."):
+                    return []
+                rows = [r for r in rows if r[col] == val[3:]]
+        return rows
+
+    def _rest_files(self, method, body, params, token):
+        uid = self._uid(token)
+        if uid is None:
+            return FakeResponse(401, {"message": "JWT expired or invalid"})
+        if method == "GET":
+            rows = self._visible(uid, params)
+            rows.sort(key=lambda r: r["updated_at"], reverse=True)
+            return FakeResponse(200, [self._row_json(r) for r in rows])
+        if method == "DELETE":
+            rows = self._visible(uid, params)
+            for r in rows:
+                del self.rows[(r["user_id"], r["name"])]
+            return FakeResponse(200, [self._row_json(r) for r in rows])
+        if method == "POST":
+            body = body if isinstance(body, dict) else {}
+            name = body.get("name")
+            if (
+                body.get("user_id") != uid
+                or not isinstance(name, str)
+                or body.get("object_key") != f"{uid}/{name}"
+            ):
+                return FakeResponse(
+                    403, {"message": "new row violates row-level security policy for table \"files\""}
+                )
+            now = datetime.now(timezone.utc)
+            existing = self.rows.get((uid, name))
+            if existing is None:
+                self.rows[(uid, name)] = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": uid,
+                    "name": name,
+                    "size": body.get("size"),
+                    "content_type": body.get("content_type"),
+                    "object_key": body["object_key"],
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            else:
+                existing["size"] = body.get("size")
+                existing["content_type"] = body.get("content_type")
+                existing["updated_at"] = max(now, existing["updated_at"] + timedelta(microseconds=1))
+            return FakeResponse(201, [self._row_json(self.rows[(uid, name)])])
+        return FakeResponse(405, {"message": "method not allowed"})

@@ -497,3 +497,28 @@ Unit tests cover examples and edge cases. Property tests (Hypothesis, at least 1
 - **Smoke tests**: `.gitignore` excludes `.env` and `.venv`; `.env.example` has the four variables and no real values; `vercel.json` rewrite targets `api/index.py`; `api/index.py` exposes `app`; `requirements.txt` has exact pins and no `boto3`/`moto`; `ci.yml` uses checkout, setup-python 3.12, `pip install -r requirements.txt`, `pytest`, and references no `secrets.`; README sections exist (Supabase setup, RLS SQL, env vars, GitHub, Vercel, service-role warning, no-resources statement).
 - The browser upload flow (progress bar, XHR PUT, client-side validation) is checked manually or with a small JS test, since it is UI behavior.
 - `conftest.py` sets dummy `SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_BUCKET` so CI needs no secrets.
+
+## Database (PostgreSQL)
+
+File metadata lives in `public.files` (see `supabase/schema.sql`), protected by RLS so each user sees only rows where `user_id = auth.uid()`. CloudVault reaches it through PostgREST with the Anon_Key and the user's access token only.
+
+- **`app/supabase_db.py`**: `FilesRepo` built on the existing `SupabaseClient` with methods `list(ctx)`, `upsert(ctx, record)`, `delete(ctx, name)`, and `get(ctx, name)`.
+  - list: `GET /rest/v1/files?select=name,size,content_type,created_at,updated_at&order=updated_at.desc`
+  - upsert: `POST /rest/v1/files?on_conflict=user_id,name` with `Prefer: resolution=merge-duplicates,return=representation`
+  - delete: `DELETE /rest/v1/files?name=eq.<n>` (name URL-encoded)
+  - get: `GET /rest/v1/files?name=eq.<n>&select=...`
+  - Failures raise `SupabaseError`, which routes map to HTTP 502.
+- **`SupabaseStorage.stat(ctx, name)`**: returns size and mimetype from Storage list metadata, or `None` when the object does not exist.
+- **Upload completion flow**: the browser PUTs to the Signed_Upload_URL, then `app.js` calls `POST /api/files/complete {name}` with the CSRF header. The route validates the name (Req 9), calls `stat`, returns 404 if missing (no row written), otherwise upserts the row and returns the File_Record.
+- **Listing**: `GET /api/files` reads from `FilesRepo.list`, reporting `uploaded_at` as `created_at` or `updated_at` after a replace, newest first.
+- **Delete**: remove the Storage object and the row. Both missing returns 404. Object missing with a row present deletes the row and returns 200.
+- **View/download**: unchanged, using Storage existence checks.
+- **Tests**: Fake_Supabase gains `/rest/v1/files` emulating PostgREST filters, ordering, upsert, and RLS by token user.
+
+### Additional Correctness Properties
+
+**Property 15: Per-user row isolation.** For any two users, rows written by one are never returned, updated, or deleted through the other's token.
+**Validates: Requirements 20.2, 20.7**
+
+**Property 16: Complete only for existing objects.** For any name, `POST /api/files/complete` writes a row if and only if the object exists under the caller's prefix; otherwise it returns 404 and the table is unchanged.
+**Validates: Requirements 20.4, 20.5**

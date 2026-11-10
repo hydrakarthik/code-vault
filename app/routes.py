@@ -4,8 +4,15 @@ from datetime import timezone
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
 
 from .auth import csrf_protect, get_csrf_token, login_required
-from .supabase_storage import UserContext
-from .validation import PREVIEW_MIME, UploadRejected, preview_mimetype, validate_declared_upload
+from .supabase_storage import FileNotFound, UserContext
+from .validation import (
+    PREVIEW_MIME,
+    UploadRejected,
+    extension_allowed,
+    preview_mimetype,
+    sanitize_filename,
+    validate_declared_upload,
+)
 
 bp = Blueprint("main", __name__)
 
@@ -18,6 +25,10 @@ def _config():
 
 def _storage():
     return current_app.extensions["cloudvault_storage"]
+
+
+def _db():
+    return current_app.extensions["cloudvault_db"]
 
 
 def _ctx() -> UserContext:
@@ -46,11 +57,11 @@ def index():
 @bp.route("/api/files", methods=["GET"])
 @login_required
 def list_files():
-    records = sorted(_storage().list(_ctx()), key=lambda r: r.uploaded_at, reverse=True)
+    rows = sorted(_db().list(_ctx()), key=lambda r: r["uploaded_at"], reverse=True)
     return jsonify(
         files=[
-            {"name": r.name, "size": r.size, "uploaded_at": _iso_utc(r.uploaded_at)}
-            for r in records
+            {"name": r["name"], "size": r["size"], "uploaded_at": _iso_utc(r["uploaded_at"])}
+            for r in rows
         ]
     )
 
@@ -67,6 +78,28 @@ def upload_url():
     name = validate_declared_upload(data.get("name"), data.get("size"), _config())
     info = _storage().create_upload_url(_ctx(), name)
     return jsonify(**info, name=name)
+
+
+@bp.route("/api/files/complete", methods=["POST"])
+@login_required
+@csrf_protect
+def complete_upload():
+    if request.content_length is None or request.content_length > MAX_BODY:
+        raise UploadRejected("Request too large.", 413)
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
+    raw = data.get("name")
+    secure = sanitize_filename(raw if isinstance(raw, str) else "")
+    if not secure or secure != raw:
+        raise UploadRejected("Invalid file name.", 400)
+    allowed = _config().allowed_extensions
+    if not extension_allowed(secure, allowed):
+        raise UploadRejected("Allowed types: " + ", ".join(sorted(allowed)), 400)
+    ctx = _ctx()
+    info = _storage().stat(ctx, secure)  # FileNotFound -> 404, nothing written
+    rec = _db().upsert(ctx, secure, info["size"], info["content_type"])
+    return jsonify(name=secure, size=info["size"], uploaded_at=_iso_utc(rec["uploaded_at"])), 200
 
 
 @bp.route("/api/files/<name>/view", methods=["GET"])
@@ -87,5 +120,11 @@ def download_file(name):
 @login_required
 @csrf_protect
 def delete_file(name):
-    _storage().delete(_ctx(), name)
+    ctx = _ctx()
+    had_object = _storage().exists(ctx, name)
+    if had_object:
+        _storage().delete(ctx, name)
+    had_row = _db().delete(ctx, name)
+    if not had_object and not had_row:
+        raise FileNotFound("File not found.")
     return jsonify(deleted=name), 200

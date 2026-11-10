@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Files - CloudVault{% endblock %}
 {% block content %}
+<header class="page-head"><h1>{% if user_name %}Hi, {{ user_name }}{% else %}Your vault{% endif %}</h1><p class="muted">Files are private to your account.</p></header>
 <section class="card" aria-labelledby="upload-heading">
   <div class="card-header"><h2 id="upload-heading">Upload a file</h2></div>
   <form id="upload-form" class="upload-form" enctype="multipart/form-data">

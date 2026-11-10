@@ -22,13 +22,13 @@ from .supabase_auth import (
     EmailNotConfirmed,
     RegistrationFailed,
 )
-from .validation import UploadRejected, validate_credentials
+from .validation import UploadRejected, validate_credentials, validate_display_name
 
 log = logging.getLogger(__name__)
 
 bp = Blueprint("auth", __name__)
 
-SESSION_KEYS = ("user_id", "email", "access_token", "refresh_token", "expires_at", "csrf_token")
+SESSION_KEYS = ("user_id", "email", "access_token", "refresh_token", "expires_at", "csrf_token", "name")
 INVALID_CREDENTIALS = "Invalid email or password."
 NOT_CONFIRMED = "Please confirm your email address before logging in."
 CSRF_EXPIRED = "Your session expired. Please try again."
@@ -49,6 +49,8 @@ def _store(result: AuthResult) -> None:
     session["access_token"] = result.access_token
     session["refresh_token"] = result.refresh_token
     session["expires_at"] = result.expires_at
+    session["name"] = result.display_name or (
+        result.email.split("@")[0] if result.email else "")
     session.setdefault("csrf_token", secrets.token_urlsafe(32))
     try:
         size = len(current_app.session_interface.get_signing_serializer(current_app).dumps(dict(session)))
@@ -154,7 +156,7 @@ def register():
         return redirect(url_for("main.index"))
 
     def render(status=200, **kw):
-        ctx = dict(error=None, message=None, email="", registered=False)
+        ctx = dict(error=None, message=None, email="", name="", registered=False)
         ctx.update(kw)
         get_csrf_token()
         return render_template("register.html", **ctx), status
@@ -163,18 +165,20 @@ def register():
         return render()
 
     raw_email = (request.form.get("email") or "").strip()
+    raw_name = request.form.get("name") or ""
     if not _csrf_valid():
-        return render(400, error=CSRF_EXPIRED, email=raw_email)
+        return render(400, error=CSRF_EXPIRED, email=raw_email, name=raw_name)
 
     try:
+        display_name = validate_display_name(raw_name)
         email = validate_credentials(raw_email, request.form.get("password"))
     except UploadRejected as exc:
-        return render(400, error=exc.message, email=raw_email)
+        return render(400, error=exc.message, email=raw_email, name=raw_name)
 
     try:
-        _auth().register(email, request.form.get("password"))
+        _auth().register(email, request.form.get("password"), display_name)
     except RegistrationFailed:
-        return render(error=REGISTER_FAILED, email=raw_email)
+        return render(error=REGISTER_FAILED, email=raw_email, name=raw_name)
     return render(message=REGISTER_MSG, registered=True)
 
 

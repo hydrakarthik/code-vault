@@ -15,9 +15,10 @@
     {% else %}
     <form method="post" action="{{ url_for('auth.register') }}">
       <input type="hidden" name="csrf_token" value="{{ get_csrf_token() }}">
+      <div class="form-group"><label for="name">Name <span class="muted">(optional)</span></label><input type="text" id="name" name="name" value="{{ name or '' }}" maxlength="50" autocomplete="name" autofocus></div>
       <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" value="{{ email or '' }}" autocomplete="email" required autofocus>
+        <input type="email" id="email" name="email" value="{{ email or '' }}" autocomplete="email" required>
       </div>
       <div class="form-group">
         <label for="password">Password</label>

@@ -43,8 +43,14 @@ def _iso_utc(dt) -> str:
 
 
 @bp.route("/")
-@login_required
 def index():
+    if not session.get("user_id"):
+        return render_template("landing.html")
+    return _dashboard()
+
+
+@login_required
+def _dashboard():
     config = _config()
     return render_template(
         "files.html",

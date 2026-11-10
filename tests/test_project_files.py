@@ -42,6 +42,23 @@ def test_static_assets_served_from_public():
     assert not (ROOT / "app" / "static").exists()
 
 
+def test_landing_assets_exist_and_are_safe_and_self_contained():
+    css = ROOT / "public" / "static" / "css" / "landing.css"
+    js = ROOT / "public" / "static" / "js" / "landing.js"
+    assert css.is_file() and js.is_file()
+    js_text = js.read_text(encoding="utf-8")
+    for banned in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
+        assert banned not in js_text, banned
+    for rel in (
+        "app/templates/landing.html",
+        "public/static/css/landing.css",
+        "public/static/js/landing.js",
+    ):
+        text = read(rel)
+        assert "http://" not in text, rel
+        assert "https://" not in text, rel
+
+
 def test_index_entrypoint_exposes_flask_app():
     from flask import Flask
 

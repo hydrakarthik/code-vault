@@ -287,3 +287,27 @@ The stack is Supabase, GitHub, and Vercel only. Supabase Auth authenticates user
 15. THE README SHALL reference `supabase/schema.sql` and `supabase/storage.sql` for the database setup, in place of or in addition to inline SQL.
 16. THE CloudVault SHALL use no database password and no Service_Role_Key and SHALL introduce no new environment variables.
 17. THE automated tests SHALL extend Fake_Supabase with a /rest/v1/files endpoint emulating PostgREST and RLS.
+
+### Requirement 21: Landing Page and Dark Glass Theme
+**User Story:** As a visitor, I want a striking public landing page and a consistent dark glass look across the site, so that I understand what CloudVault offers and can sign up quickly.
+#### Acceptance Criteria
+1. WHEN a visitor without a Session requests `/`, THE CloudVault SHALL render a public landing page instead of redirecting to the login page; WHEN a signed-in User requests `/`, THE CloudVault SHALL render the Dashboard as before, including token refresh and redirect to the login page if refresh fails.
+2. THE landing page SHALL contain the decorative "Cloud" headline (aria-hidden), an h1 title "Secure File Vault", a one-sentence description, a "Get Started" link to the registration page, and a "Sign in" link to the login page.
+3. THE landing page SHALL build the hero art (orbs, grid, cloud, widget cards, connectors, cables, wave mesh) with HTML, CSS, inline SVG, and a canvas script, with no external images, fonts, or libraries, and SHALL mark the hero art aria-hidden.
+4. WHILE the user has `prefers-reduced-motion: reduce`, THE landing page SHALL show no animation, with a static wave frame and no floating.
+5. WHILE the viewport is 720 px wide or narrower, THE landing page SHALL stack the title and buttons, hide some widget cards, and avoid horizontal page scrolling.
+6. THE login, registration, dashboard, and error pages SHALL use the same dark glass theme (near-black background, frosted cards, light primary button, blue accent) while keeping all existing element IDs, classes, form fields, link texts, and JavaScript behavior.
+7. THE CloudVault pages SHALL keep visible focus outlines, SHALL keep text contrast of at least 4.5:1 against the background, and SHALL provide a "Skip to content" link.
+8. THE navigation bar SHALL show "Sign in" and "Create account" links for visitors without a Session, and the existing email chip and logout control for signed-in Users; the brand SHALL link to `/`.
+
+Reference style (described, not embedded): near-black background with a faint grid; large blurred blue spheres with a soft green-white sheen cut off along the top edge; a huge light-gray "Cloud" headline across the upper half; a glowing 3D blue cloud in the center with a curved wireframe grid; small frosted-glass widget cards floating around the cloud (toggle bars, a window with dots and a slider, a 2x3 icon grid, a list, a bar chart, a slider, server rows, stacked pills, a small square icon) joined to the cloud by thin right-angle lines; thin cables hanging under the cloud; an animated dotted perspective wave mesh across the bottom; a large white title at bottom-left; a light "Get Started" button at bottom-right.
+
+### Requirement 22: Display Name Greeting
+**User Story:** As a User, I want to see my name after I sign in, so that CloudVault feels personal and I can confirm which account I am using.
+#### Acceptance Criteria
+1. THE registration page SHALL provide an optional "Name" field (maximum 50 characters) before the email field.
+2. WHEN a visitor registers with a non-empty name, THE CloudVault SHALL send the name to Supabase Auth as user metadata `display_name` (trimmed, internal whitespace collapsed, control characters removed).
+3. IF the submitted name exceeds 50 characters after trimming, THEN THE CloudVault SHALL reject the registration with HTTP status 400 and the message "Name must be at most 50 characters."
+4. WHEN a User signs in or the Session is refreshed, THE CloudVault SHALL store a display name in the Session: the `display_name` from Supabase user metadata if present and valid, otherwise the part of the email before "@".
+5. THE Dashboard SHALL greet the User with a heading "Hi, <display name>" on the files page and SHALL show the display name in the navigation bar user chip, with the email as its title tooltip.
+6. THE CloudVault SHALL HTML-escape the display name wherever rendered and SHALL take the display name from no request input other than the registration form.

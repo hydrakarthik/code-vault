@@ -1,5 +1,6 @@
 """Pure validation helpers. No Flask request context required."""
 import re
+import unicodedata
 
 from werkzeug.utils import secure_filename
 
@@ -47,6 +48,17 @@ def validate_credentials(email, password) -> str:
     if len(password) > 128:
         raise UploadRejected("Password must be at most 128 characters.", 400)
     return email
+
+
+def validate_display_name(raw) -> str:
+    """Return the cleaned display name ("" if empty) or raise UploadRejected(msg, 400)."""
+    if not isinstance(raw, str):
+        return ""
+    cleaned = "".join(ch for ch in raw if not unicodedata.category(ch).startswith("C"))
+    cleaned = " ".join(cleaned.split())
+    if len(cleaned) > 50:
+        raise UploadRejected("Name must be at most 50 characters.", 400)
+    return cleaned
 
 
 def validate_declared_upload(name, size, config) -> str:

@@ -143,3 +143,25 @@ def test_preview_mimetype():
     assert preview_mimetype("a.docx") is None
     assert preview_mimetype("noext") is None
     assert preview_mimetype(None) is None
+
+
+def test_required_values_are_whitespace_trimmed():
+    # A tab pasted into the Vercel dashboard once produced bucket "%09cloudvault".
+    from app.config import Config
+    cfg = Config.from_env({
+        "SECRET_KEY": " s3cret\n",
+        "SUPABASE_URL": "\thttps://x.supabase.co/ ",
+        "SUPABASE_ANON_KEY": " key ",
+        "SUPABASE_BUCKET": "\tcode-vault ",
+    })
+    assert cfg.supabase_bucket == "code-vault"
+    assert cfg.supabase_url == "https://x.supabase.co"
+    assert cfg.supabase_anon_key == "key"
+    assert cfg.secret_key == "s3cret"
+
+
+def test_whitespace_only_required_value_is_missing():
+    import pytest
+    from app.config import Config, ConfigError
+    with pytest.raises(ConfigError, match="SUPABASE_BUCKET"):
+        Config.from_env({"SECRET_KEY": "s", "SUPABASE_URL": "u", "SUPABASE_ANON_KEY": "k", "SUPABASE_BUCKET": "\t "})

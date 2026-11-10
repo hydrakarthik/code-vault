@@ -261,10 +261,48 @@ def test_api_requires_session(client, fake, method, path):
     assert not fake.calls_to("/storage/v1")
 
 
-def test_dashboard_redirects_anonymous_to_login(client):
+def test_anonymous_root_shows_landing_page(client, fake):
     resp = client.get("/")
-    assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/login")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Secure" in body and "File Vault" in body
+    assert "Get Started" in body
+    assert 'href="/register"' in body
+    assert 'href="/login"' in body
+    assert not fake.calls_to("/storage")
+    assert not fake.calls_to("/rest")
+    assert not fake.calls_to("/auth")
+
+
+def test_signed_in_root_shows_dashboard_not_landing(signed_in):
+    body = signed_in.get("/").get_data(as_text=True)
+    assert f"Hi, {TEST_EMAIL.split('@')[0]}" in body
+    assert TEST_EMAIL in body
+    assert 'id="upload-form"' in body
+    assert "hero-word" not in body
+
+
+def test_anonymous_nav_shows_sign_in_and_create_account(client):
+    body = client.get("/login").get_data(as_text=True)
+    assert ">Sign in</a>" in body
+    assert ">Create account</a>" in body
+
+
+@pytest.mark.parametrize("path", ["/", "/login", "/register"])
+def test_pages_have_skip_link_and_main_landmark(client, path):
+    body = client.get(path).get_data(as_text=True)
+    assert 'href="#main"' in body
+    assert 'id="main"' in body
+
+
+def test_signed_in_page_has_skip_link_and_main(signed_in):
+    body = signed_in.get("/").get_data(as_text=True)
+    assert 'href="#main"' in body
+    assert 'id="main"' in body
+
+
+def test_anonymous_api_files_still_401(client):
+    assert client.get("/api/files").status_code == 401
 
 
 @pytest.mark.parametrize("path", ["/login", "/register"])

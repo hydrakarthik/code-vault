@@ -1,4 +1,4 @@
-﻿"""Application configuration loaded and validated from environment variables."""
+"""Application configuration loaded and validated from environment variables."""
 from dataclasses import dataclass
 import os
 
@@ -24,8 +24,11 @@ class Config:
 
     @classmethod
     def from_env(cls, env=os.environ) -> "Config":
+        # Strip stray whitespace (e.g. a tab pasted into a dashboard field), which
+        # would otherwise end up inside URLs such as the Storage bucket path.
+        values = {name: (env.get(name) or "").strip() for name in REQUIRED_VARS}
         for name in REQUIRED_VARS:
-            if not env.get(name):
+            if not values[name]:
                 raise ConfigError(f"Missing required environment variable: {name}")
 
         raw_ext = env.get("ALLOWED_EXTENSIONS")
@@ -50,10 +53,10 @@ class Config:
         )
 
         return cls(
-            secret_key=env["SECRET_KEY"],
-            supabase_url=env["SUPABASE_URL"].rstrip("/"),
-            supabase_anon_key=env["SUPABASE_ANON_KEY"],
-            supabase_bucket=env["SUPABASE_BUCKET"],
+            secret_key=values["SECRET_KEY"],
+            supabase_url=values["SUPABASE_URL"].rstrip("/"),
+            supabase_anon_key=values["SUPABASE_ANON_KEY"],
+            supabase_bucket=values["SUPABASE_BUCKET"],
             allowed_extensions=frozenset(extensions),
             max_upload_size=max_size,
             production=production,

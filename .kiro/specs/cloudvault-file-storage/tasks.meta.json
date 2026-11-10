@@ -338,6 +338,122 @@
         "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
         "timestamp": 1794305599924
       }
+    ],
+    "11.1 Build the dark theme and landing page": [
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313555207
+      },
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313566124
+      },
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313796850
+      }
+    ],
+    "11.2 Update tests": [
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313555352
+      },
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313797158
+      },
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313882112
+      }
+    ],
+    "12. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313555448
+      },
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313882871
+      },
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313958877
+      }
+    ],
+    "11. Landing page and dark glass theme": [
+      {
+        "executionId": "a274c33a-8107-41d7-97ff-bff863b212f4",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794313882221
+      }
+    ],
+    "13.1 Implement display name": [
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314448216
+      },
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314460211
+      },
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314571529
+      }
+    ],
+    "13.2 Update tests": [
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314448351
+      },
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314572235
+      },
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314662714
+      }
+    ],
+    "14. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314448439
+      },
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314663406
+      },
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314780461
+      }
+    ],
+    "13. Display name greeting": [
+      {
+        "executionId": "e9db7765-3249-4d29-83d4-c30e13128856",
+        "chatSessionId": "sess_7d310be6-a02b-4c22-b9d7-a8530ecdd3b6",
+        "timestamp": 1794314662856
+      }
     ]
   }
 }

@@ -43,6 +43,7 @@ class _User:
     email: str
     password: str
     confirmed: bool = False
+    metadata: object = None
 
 
 class FakeSupabase:
@@ -62,8 +63,9 @@ class FakeSupabase:
         self._counter = itertools.count(1)
 
     # -- test helpers ----------------------------------------------------
-    def add_user(self, email, password, confirmed=True) -> str:
-        user = _User(str(uuid.uuid4()), email.strip().lower(), password, confirmed)
+    def add_user(self, email, password, confirmed=True, display_name=None) -> str:
+        meta = {"display_name": display_name} if display_name is not None else {}
+        user = _User(str(uuid.uuid4()), email.strip().lower(), password, confirmed, meta)
         self.users[user.email] = user
         return user.id
 
@@ -177,7 +179,7 @@ class FakeSupabase:
             "expires_in": self.expires_in,
             "expires_at": exp,
             "token_type": "bearer",
-            "user": {"id": user.id, "email": user.email},
+            "user": {"id": user.id, "email": user.email, "user_metadata": user.metadata},
         }
 
     def _auth(self, method, path, body, params, token):
@@ -188,6 +190,8 @@ class FakeSupabase:
                 return FakeResponse(422, {"error_code": "weak_password"})
             if email not in self.users:  # existing users are obfuscated: same 200
                 self.add_user(email, body["password"], confirmed=False)
+                data = body.get("data")
+                self.users[email].metadata = data if isinstance(data, dict) else {}
             return FakeResponse(200, {"id": self.users[email].id, "email": email})
         if path == "/token" and method == "POST":
             grant = params.get("grant_type")

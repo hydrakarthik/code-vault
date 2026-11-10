@@ -1,4 +1,4 @@
-# Implementation Plan: CloudVault File Storage (Supabase + GitHub + Vercel)
+﻿# Implementation Plan: CloudVault File Storage (Supabase + GitHub + Vercel)
 
 ## Overview
 
@@ -112,6 +112,25 @@ Rewrite the existing admin/local/S3 Flask app into a multi-user app backed by Su
 - [x] 10. Checkpoint - Ensure all tests pass
   - Run full `pytest`, ensure all tests pass, ask the user if questions arise.
 
+- [x] 11. Landing page and dark glass theme
+  - [x] 11.1 Build the dark theme and landing page
+    - Update `base.html` (blocks `body_class`, `head`, `layout`, skip link, anonymous nav links); rewrite `styles.css` to the dark theme; polish login, register, files, and error templates; change `index()` in `routes.py`; add `landing.html`, `landing.css`, `landing.js`
+    - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6, 21.7, 21.8_
+  - [x] 11.2 Update tests
+    - Replace the anonymous-`/`-redirects-to-login test with landing page tests (200, Get Started link to /register, Sign in link to /login, contains "Secure File Vault", no Supabase calls); keep dashboard tests; add a smoke test that `landing.css` and `landing.js` exist in `public/static` and `landing.js` has no `innerHTML`
+    - _Requirements: 21.1, 21.2, 21.3_
+- [x] 12. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+- [x] 13. Display name greeting
+  - [x] 13.1 Implement display name
+    - Add `validate_display_name` to `validation.py`; update `SupabaseAuth.register` and `AuthResult` in `supabase_auth.py`; update `register` and `_store` and add the `"name"` session key in `auth.py`; add the `user_name` context processor in `__init__.py`; update `register.html`, `base.html` (chip), and `files.html` (greeting)
+    - _Requirements: 22.1, 22.2, 22.3, 22.4, 22.5, 22.6_
+  - [x] 13.2 Update tests
+    - Fake signup stores `data` as `user_metadata` and returns it on token grants; add tests for name sent on register, 50-character limit returns 400, greeting shows metadata name, fallback to email prefix when no name, escaping of a name like `<b>x</b>`, chip title is the email
+    - _Requirements: 22.2, 22.3, 22.4, 22.5, 22.6_
+- [x] 14. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
 ## Notes
 
 - Sub-tasks marked with `*` are optional and can be skipped for a faster MVP
@@ -130,7 +149,11 @@ Rewrite the existing admin/local/S3 Flask app into a multi-user app backed by Su
     { "id": 4, "tasks": ["7.2", "7.3", "7.4", "7.5"] },
     { "id": 5, "tasks": ["7.6", "7.7"] },
     { "id": 6, "tasks": ["9.1", "9.2"] },
-    { "id": 7, "tasks": ["9.3"] }
+    { "id": 7, "tasks": ["9.3"] },
+    { "id": 8, "tasks": ["11.1"] },
+    { "id": 9, "tasks": ["11.2"] },
+    { "id": 10, "tasks": ["13.1"] },
+    { "id": 11, "tasks": ["13.2"] }
   ]
 }
 ```

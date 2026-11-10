@@ -522,3 +522,23 @@ File metadata lives in `public.files` (see `supabase/schema.sql`), protected by 
 
 **Property 16: Complete only for existing objects.** For any name, `POST /api/files/complete` writes a row if and only if the object exists under the caller's prefix; otherwise it returns 404 and the table is unchanged.
 **Validates: Requirements 20.4, 20.5**
+
+## Landing Page and Theme
+- **Route change** (`app/routes.py`): `index()` renders `landing.html` when `session` has no `user_id`; otherwise it calls a `login_required`-wrapped `_dashboard()`, which keeps token refresh and the redirect to login on refresh failure. The landing branch makes no Supabase calls.
+- **`base.html`**: gains blocks `body_class`, `head`, and `layout`. The default `layout` is the existing `<main id="main" class="container">` with the status region. It also adds a "Skip to content" link and the anonymous nav links ("Sign in", "Create account"); signed-in users keep the email chip and logout control. The brand links to `/`.
+- **New files**: `app/templates/landing.html`, `public/static/css/landing.css`, `public/static/js/landing.js`. `landing.js` uses no `innerHTML`.
+- **`styles.css`**: rewritten to the dark glass theme (near-black background, frosted cards, light primary button, blue accent) with the same class names, so login, register, files, and error templates keep their IDs, classes, and JS behavior. Focus outlines stay visible and text contrast is at least 4.5:1.
+- **Hero layout**: CSS grid with a `.hero-stage` whose `aspect-ratio: 600/380` matches the cloud SVG viewBox. Widget cards are positioned with `--x`/`--y` custom properties in viewBox units. Orbs, grid, connectors, and cables are decorative and aria-hidden.
+- **Cloud**: a union of circles and a rounded rect inside a clipPath, filled with a `userSpaceOnUse` radial gradient. Wireframe paths are generated with Jinja loops. A blurred glow copy sits behind it, with bottom shading.
+- **Wave**: a canvas perspective dot grid animated with `requestAnimationFrame`, `devicePixelRatio` capped at 2, and a single static frame under `prefers-reduced-motion: reduce`.
+- **Responsive**: at 720 px and narrower, title and buttons stack, some widget cards are hidden, and the page does not scroll horizontally.
+- **Tests**: landing returns 200 with the expected links and title and makes no Supabase calls; dashboard tests are kept; a smoke test checks that the static files exist and `landing.js` has no `innerHTML`.
+
+## Display Name
+- **`validate_display_name(raw) -> str`** in `app/validation.py`: strips, collapses internal whitespace, drops control characters, returns "" when empty, raises `UploadRejected` (400, "Name must be at most 50 characters.") when longer than 50.
+- **`SupabaseAuth.register(email, password, display_name="")`** sends `{"email", "password", "data": {"display_name": ...}}`; the `data` key is included only when the name is non-empty.
+- **`AuthResult`** gains `display_name: str = ""`, read from `user.user_metadata.display_name` (must be a string, re-validated; invalid becomes "").
+- **`auth.py`**: `register` validates the form `name` and passes it on; `_store` sets `session["name"] = result.display_name or email.split("@")[0]`; `SESSION_KEYS` includes `"name"`.
+- **Context processor** in `app/__init__.py` injects `user_name`.
+- **Templates**: `files.html` page-head h1 becomes `Hi, {{ user_name }}` (fallback "Your vault" if missing); `base.html` chip shows `user_name` with `title="{{ user_email }}"`; `register.html` adds `<input type="text" id="name" name="name" maxlength="50" autocomplete="name">` labeled "Name (optional)" before the email field and repopulates it on errors. Jinja autoescaping covers HTML escaping.
+- **Tests**: Fake_Supabase signup stores `data` as `user_metadata` and returns it on token grants; tests cover name sent on register, 50-character limit (400), greeting from metadata, fallback to email prefix, escaping of `<b>x</b>`, and chip title equal to the email.

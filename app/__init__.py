@@ -59,9 +59,12 @@ def create_app(config=None, supabase_client=None):
 
     @app.context_processor
     def inject_auth():
+        email = session.get("email")
+        name = session.get("name") or (email.split("@")[0] if email else None)
         return {
             "authenticated": bool(session.get("user_id")),
-            "user_email": session.get("email"),
+            "user_email": email,
+            "user_name": name or None,
         }
 
     @app.errorhandler(UploadRejected)

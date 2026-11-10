@@ -4,6 +4,7 @@ import time
 from dataclasses import dataclass
 
 from .supabase_client import SupabaseClient, SupabaseError
+from .validation import validate_display_name
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +16,16 @@ class AuthResult:
     access_token: str
     refresh_token: str
     expires_at: int
+    display_name: str = ""
+
+
+def _safe_display_name(user) -> str:
+    try:
+        meta = user.get("user_metadata")
+        raw = meta.get("display_name") if isinstance(meta, dict) else None
+        return validate_display_name(raw)
+    except Exception:
+        return ""
 
 
 class AuthError(Exception):
@@ -63,16 +74,18 @@ class SupabaseAuth:
                 access_token=data["access_token"],
                 refresh_token=data["refresh_token"],
                 expires_at=expires_at,
+                display_name=_safe_display_name(user),
             )
         except (KeyError, TypeError, ValueError) as exc:
             log.warning("Malformed auth response: %s", type(exc).__name__)
             raise AuthError("Malformed auth response") from exc
 
-    def register(self, email, password) -> None:
+    def register(self, email, password, display_name="") -> None:
+        body = {"email": email, "password": password}
+        if display_name:
+            body["data"] = {"display_name": display_name}
         try:
-            resp = self.client.request(
-                "POST", "/auth/v1/signup", json={"email": email, "password": password}
-            )
+            resp = self.client.request("POST", "/auth/v1/signup", json=body)
         except SupabaseError as exc:
             raise RegistrationFailed("Registration failed") from exc
         if resp.status_code != 200:

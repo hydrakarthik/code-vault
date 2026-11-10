@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}CloudVault - Secure cloud file storage{% endblock %}
+{% block body_class %}landing{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">{% endblock %}
+{% block layout %}
+<main id="main" class="hero" aria-labelledby="hero-title">
+  <div class="hero-orbs" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+    <span class="orb orb-4"></span>
+  </div>
+  <p class="hero-word" aria-hidden="true">Cloud</p>
+  <canvas id="hero-wave" class="hero-wave" aria-hidden="true"></canvas>
+
+  <div class="hero-stage" aria-hidden="true">
+    <svg class="hero-links" viewBox="0 0 600 380" preserveAspectRatio="none" focusable="false">
+      <g fill="none">
+        <path d="M112 48 V150 H200"/>
+        <path d="M52 182 H200"/>
+        <path d="M72 283 H160"/>
+        <path d="M398 20 V120"/>
+        <path d="M522 98 H420"/>
+        <path d="M566 212 H460"/>
+        <path d="M540 300 H450"/>
+        <path d="M456 348 V300"/>
+        <path d="M226 350 V300"/>
+        <path d="M150 330 V300"/>
+      </g>
+    </svg>
+
+    <svg class="hero-cloud" viewBox="0 0 600 380" focusable="false">
+      <defs>
+        <radialGradient id="cv-fill" gradientUnits="userSpaceOnUse" cx="250" cy="110" r="380">
+          <stop offset="0" stop-color="#f5f8ff"/>
+          <stop offset=".28" stop-color="#c3d4ff"/>
+          <stop offset=".55" stop-color="#7a95e6"/>
+          <stop offset=".8" stop-color="#34447f"/>
+          <stop offset="1" stop-color="#151b38"/>
+        </radialGradient>
+        <linearGradient id="cv-shade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset=".45" stop-color="#0a0f24" stop-opacity="0"/>
+          <stop offset="1" stop-color="#0a0f24" stop-opacity=".75"/>
+        </linearGradient>
+        <filter id="cv-glow" x="-30%" y="-40%" width="160%" height="190%">
+          <feGaussianBlur stdDeviation="28"/>
+        </filter>
+        <filter id="cv-soft" x="-30%" y="-60%" width="160%" height="220%">
+          <feGaussianBlur stdDeviation="14"/>
+        </filter>
+        <clipPath id="cv-shape">
+          <circle cx="175" cy="222" r="92"/>
+          <circle cx="300" cy="160" r="122"/>
+          <circle cx="428" cy="205" r="98"/>
+          <rect x="85" y="215" width="430" height="115" rx="57"/>
+        </clipPath>
+      </defs>
+
+      <g fill="none" stroke="#8a93a8" stroke-width="1.5" stroke-linecap="round">
+        <path d="M262 328 C258 344 270 352 264 376"/>
+        <path d="M276 328 C284 340 270 356 280 376"/>
+        <path d="M290 328 C292 346 300 350 296 362 C290 372 282 366 288 360 C294 355 302 362 298 376"/>
+        <path d="M304 328 C310 342 300 358 308 376"/>
+        <path d="M318 328 C316 344 324 356 318 370"/>
+      </g>
+
+      <g class="cv-glow" filter="url(#cv-glow)" fill="#6d8cff" opacity=".55">
+        <circle cx="175" cy="222" r="92"/>
+        <circle cx="300" cy="160" r="122"/>
+        <circle cx="428" cy="205" r="98"/>
+        <rect x="85" y="215" width="430" height="115" rx="57"/>
+      </g>
+
+      <g clip-path="url(#cv-shape)">
+        <rect width="600" height="380" fill="url(#cv-fill)"/>
+        <g class="cv-grid" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width=".8">
+          {% for y in range(44, 336, 13) %}<path d="M50 {{ y }} Q300 {{ y + 24 }} 550 {{ y }}"/>{% endfor %}
+          {% for x in range(66, 540, 14) %}<path d="M{{ x }} 30 Q{{ (300 + (x - 300) * 1.22) | round(1) }} 185 {{ x }} 340"/>{% endfor %}
+        </g>
+        <ellipse cx="245" cy="105" rx="115" ry="55" fill="#fff" opacity=".35" filter="url(#cv-soft)"/>
+        <rect width="600" height="380" fill="url(#cv-shade)"/>
+      </g>
+    </svg>
+
+    <div class="hc hc-toggle" style="--x:112;--y:48;--d:-0.4s">
+      <span class="ln w70"></span><span class="ln dim w100"></span>
+    </div>
+    <div class="hc hc-panel" style="--x:52;--y:182;--d:-1.6s">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="ln w90"></span>
+      <span class="ln dim w60"></span>
+      <span class="slider"><i style="--p:62%"></i></span>
+    </div>
+    <div class="hc hc-pill" style="--x:72;--y:283;--d:-2.4s">
+      <span class="dots"><i></i><i></i></span>
+      <span class="ln w100"></span>
+    </div>
+    <div class="hc hc-grid" style="--x:398;--y:20;--d:-0.9s">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="hc hc-list" style="--x:522;--y:98;--d:-2s">
+      <div class="row"><i class="dot"></i><span class="ln"></span></div>
+      <div class="row"><i class="dot"></i><span class="ln"></span></div>
+      <div class="row"><i class="dot"></i><span class="ln"></span></div>
+    </div>
+    <div class="hc hc-chart" style="--x:566;--y:212;--d:-1.2s">
+      <i style="--h:35%"></i><i style="--h:55%"></i><i style="--h:42%"></i><i style="--h:78%"></i><i style="--h:95%"></i>
+    </div>
+    <div class="hc hc-slider" style="--x:540;--y:300;--d:-2.8s">
+      <span class="slider"><i style="--p:40%"></i></span>
+    </div>
+    <div class="hc hc-server" style="--x:456;--y:348;--d:-0.2s">
+      <div class="row"><span class="dots"><i></i><i></i><i></i></span><span class="ln"></span></div>
+      <div class="row"><span class="dots"><i></i><i></i><i></i></span><span class="ln"></span></div>
+      <div class="row"><span class="dots"><i></i><i></i><i></i></span><span class="ln"></span></div>
+    </div>
+    <div class="hc hc-stack" style="--x:226;--y:350;--d:-1.9s">
+      <div class="row"><span class="dots"><i></i><i></i></span><span class="ln"></span></div>
+      <div class="row"><span class="dots"><i></i><i></i></span><span class="ln"></span></div>
+      <div class="row"><span class="dots"><i></i><i></i></span><span class="ln"></span></div>
+    </div>
+    <div class="hc hc-icon" style="--x:150;--y:330;--d:-1s">
+      <i></i>
+    </div>
+  </div>
+
+  <div class="hero-copy">
+    <h1 id="hero-title" class="hero-title">Secure<br>File Vault</h1>
+    <p class="hero-sub">Private storage for your files. Upload, preview and download from anywhere. Only you can see them.</p>
+  </div>
+  <div class="hero-cta">
+    <a class="btn btn-cta" href="{{ url_for('auth.register') }}">Get Started</a>
+    <a class="hero-signin" href="{{ url_for('auth.login') }}">Sign in</a>
+  </div>
+</main>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/landing.js') }}" defer></script>
+{% endblock %}

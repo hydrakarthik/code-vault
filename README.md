@@ -13,7 +13,7 @@ This project creates no Supabase resources and runs no deployment commands. You 
    - Redirect URLs: add `http://127.0.0.1:5000/**` and `https://<project>.vercel.app/**`.
 4. SQL Editor: run these two files, in order. Both are idempotent, so re-running them is safe.
    - [`supabase/schema.sql`](supabase/schema.sql) creates the `public.files` metadata table with an index, an `updated_at` trigger, Row Level Security, and grants (no access for `anon`).
-   - [`supabase/storage.sql`](supabase/storage.sql) creates the private `cloudvault` bucket with a 10485760 byte (10 MiB) file size limit and four `storage.objects` policies that limit each user to objects under their own `<user_id>/` folder.
+   - [`supabase/storage.sql`](supabase/storage.sql) creates the private `code-vault` bucket with a 10485760 byte (10 MiB) file size limit and four `storage.objects` policies that limit each user to objects under their own `<user_id>/` folder.
 5. If you want a different bucket name or size limit, edit `storage.sql` before running it. The bucket name must match `SUPABASE_BUCKET`, and the limit should equal `MAX_UPLOAD_SIZE`. Files go straight from the browser to Supabase, so this limit is the independent size enforcement.
 6. Copy your credentials (see the table below).
 
@@ -22,7 +22,7 @@ Excerpt from `storage.sql`:
 ```sql
 create policy "users select own files" on storage.objects
   for select to authenticated
-  using (bucket_id = 'cloudvault' and (storage.foldername(name))[1] = (select auth.uid())::text);
+  using (bucket_id = 'code-vault' and (storage.foldername(name))[1] = (select auth.uid())::text);
 ```
 
 ### Credentials
@@ -31,7 +31,7 @@ create policy "users select own files" on storage.objects
 |---|---|
 | `SUPABASE_URL` | Project Settings > API (or Data API) > Project URL |
 | `SUPABASE_ANON_KEY` | Project Settings > API Keys > `anon` `public` (legacy) key, or the publishable key |
-| `SUPABASE_BUCKET` | `cloudvault` (the bucket created by `storage.sql`) |
+| `SUPABASE_BUCKET` | `code-vault` (the bucket created by `storage.sql`) |
 | `SECRET_KEY` | Generate it locally (command below) |
 
 No database password or connection string is needed. The app talks to the Data API (PostgREST) and Storage with each user's own access token, so Row Level Security applies to every call.

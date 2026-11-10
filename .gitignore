@@ -15,3 +15,4 @@ node_modules/
 # Not used by the Flask app; would make Vercel treat this as a Node project
 package.json
 package-lock.json
+preview.log
